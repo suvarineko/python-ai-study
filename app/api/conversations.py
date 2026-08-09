@@ -10,3 +10,10 @@ TODO: router = APIRouter(prefix="/conversations", tags=["conversations"])
   ConversationNotFound -> raise HTTPException(404)
 Эталон — docs/TEACHING_GUIDE.md, Шаги 3–5.
 """
+
+# @router.post("", response_model=ConversationOut, status_code=status.HTTP_201_CREATED)
+# def create_conversation(
+#     payload: ConversationCreate,
+#     service: ChatService = Depends(get_chat_service),
+# ):
+#     return service.create_conversation(payload.title)

@@ -8,3 +8,29 @@ TODO:
 Запуск: python -m uvicorn app.main:app --reload   (из корня ChatLab)
 
 """
+from contextlib import asynccontextmanager
+
+import uvicorn
+from fastapi import FastAPI
+
+from app.db import init_db
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # На старте создаём таблицы, если их ещё нет.
+    init_db()
+    yield
+
+
+app = FastAPI(title="ChatLab", lifespan=lifespan)
+
+
+
+@app.get("/healthz")
+def healthz():
+    return {"ok": True}
+
+
+if __name__ == "__main__":
+  uvicorn.run(app, port=8906)

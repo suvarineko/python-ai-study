@@ -1,0 +1,19 @@
+# Виртуальное окружение
+doodle/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# База данных SQLite
+*.db
+
+# Окружение
+.env
+
+# IDE
+.vscode/
+test.py
+TODO
+.DS_Store
