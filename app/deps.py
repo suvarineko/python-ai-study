@@ -1,10 +1,17 @@
-"""
+"""Зависимости FastAPI: собирают объекты, которые нужны роутам.
 
-TODO:
+TODO (Шаг 4):
   - def get_ai() -> AIProvider: return StubProvider()   # позже меняем ТОЛЬКО эту строку
-  - def get_chat_service(db=Depends(get_db), ai=Depends(get_ai)) -> ChatService
-
+  - прокинуть ai в ChatService: get_chat_service(db=Depends(get_db), ai=Depends(get_ai))
 """
 
-# def get_chat_service(db: Session = Depends(get_db)) -> ChatService:
-#     return ChatService(db)
+from fastapi import Depends
+from sqlalchemy.orm import Session
+
+from app.db import get_db
+from app.service import ChatService
+
+
+def get_chat_service(db: Session = Depends(get_db)) -> ChatService:
+
+    return ChatService(db)

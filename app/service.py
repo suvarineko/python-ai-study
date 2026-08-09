@@ -63,10 +63,9 @@ class ChatService:
 
     def list_messages(self, conversation_id: int) -> list[Message]:
         """Возвращает сообщения диалога в порядке добавления."""
-        # conversation = self.get_conversation(conversation_id)
+        self.get_conversation(conversation_id)
         query = select(Message.content, Message.role).where(Message.conversation_id == conversation_id).order_by("id")
-
-        return self.db.scalars(query).all()
+        return list(self.db.scalars(query).all())
 
     def add_message(self, conversation_id: int, role: str, content: str) -> Message:
         """Добавляет сообщение в диалог и возвращает его.

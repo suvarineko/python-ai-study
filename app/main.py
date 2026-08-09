@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
+from app.api.conversations import router as conversations_router
 from app.db import init_db
 
 
@@ -25,6 +26,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="ChatLab", lifespan=lifespan)
 
+app.include_router(conversations_router)
 
 
 @app.get("/healthz")
