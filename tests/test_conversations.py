@@ -18,7 +18,7 @@ def test_get_conversation_returns_detail_with_messages(client, conversation):
 
     assert response.status_code == 200
     body = response.json()
-    assert [message["content"] for message in body["messages"]] == ["Привет"]
+    assert [message["content"] for message in body["messages"]] == ["Привет", "Тест дев"]
 
 
 def test_get_unknown_conversation_returns_404(client):

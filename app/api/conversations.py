@@ -80,13 +80,13 @@ def list_messages(
     response_model=MessageOut,
     status_code=status.HTTP_201_CREATED,
 )
-def create_message(
+async def create_message(
     conv_id: int,
     payload: MessageCreate,
     service: ChatService = Depends(get_chat_service),
 ):
 
     try:
-        return service.add_message(conv_id, role="user", content=payload.content)
+        return await service.send_message(conv_id, payload.content)
     except ConversationNotFound as exc:
         raise _not_found(exc) from exc

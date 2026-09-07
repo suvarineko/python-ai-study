@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Conversation, Message
-
+from app.ai.base import AIProvider
 
 class ConversationNotFound(Exception):
     """Диалог с указанным id не найден."""
@@ -24,8 +24,10 @@ class ConversationNotFound(Exception):
 class ChatService:
     """Инкапсулирует операции с БД. Одна сессия — на время запроса."""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, ai_provider: AIProvider):
         self.db = db
+
+        self.ai = ai_provider
 
     # --- Conversations ---
 
@@ -64,7 +66,7 @@ class ChatService:
     def list_messages(self, conversation_id: int) -> list[Message]:
         """Возвращает сообщения диалога в порядке добавления."""
         self.get_conversation(conversation_id)
-        query = select(Message.content, Message.role).where(Message.conversation_id == conversation_id).order_by("id")
+        query = select(Message).where(Message.conversation_id == conversation_id).order_by(Message.id)
         return list(self.db.scalars(query).all())
 
     def add_message(self, conversation_id: int, role: str, content: str) -> Message:
@@ -82,3 +84,13 @@ class ChatService:
         self.db.commit()
         self.db.refresh(message)
         return message
+
+    async def send_message(self, conversation_id: int, content: str) -> Message:
+        """Сохраняет сообщение пользователя, спрашивает ИИ и сохраняет ответ.
+        Возвращает сообщение ассистента.
+        """
+        self.add_message(conversation_id, "user", content)
+        history = self.list_messages(conversation_id)
+        reply = await self.ai.complete(history)
+
+        return self.add_message(conversation_id, "assistant", reply)

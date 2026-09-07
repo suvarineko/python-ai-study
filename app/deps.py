@@ -10,8 +10,11 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.service import ChatService
+from app.ai.base import AIProvider, AIProviderDev, AIProviderProd
 
+def get_ai() -> AIProvider:
+    return AIProviderDev()
 
-def get_chat_service(db: Session = Depends(get_db)) -> ChatService:
+def get_chat_service(db: Session = Depends(get_db), ai_provider=Depends(get_ai)) -> ChatService:
 
-    return ChatService(db)
+    return ChatService(db, ai_provider)
