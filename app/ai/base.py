@@ -7,6 +7,9 @@ TODO: class AIProvider(Protocol) с одним методом
 from app.models import Message
 from abc import ABC, abstractmethod
 
+class AIProviderError(Exception):
+    """Провайдер не смог выдать ответ: сеть, конфиг или ошибка апстрима."""
+
 class AIProvider(ABC):
     @abstractmethod
     async def complete(self, messages: list[Message]) -> str:

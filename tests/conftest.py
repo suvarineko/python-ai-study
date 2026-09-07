@@ -2,6 +2,7 @@
 
 Каждый тест получает свежую БД в памяти: боевой engine (chatlab.db) не
 трогаем — подменяем зависимость get_db через app.dependency_overrides.
+Так же подменяем get_ai: тесты не должны зависеть от .env и ходить в сеть.
 """
 
 import pytest
@@ -10,7 +11,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.ai.base import AIProviderDev
 from app.db import Base, get_db
+from app.deps import get_ai
 from app.main import app
 
 
@@ -29,6 +32,7 @@ def client():
             yield session
 
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_ai] = lambda: AIProviderDev()
 
     try:
         yield TestClient(app)

@@ -1,20 +1,33 @@
 """Зависимости FastAPI: собирают объекты, которые нужны роутам.
 
-TODO (Шаг 4):
-  - def get_ai() -> AIProvider: return StubProvider()   # позже меняем ТОЛЬКО эту строку
-  - прокинуть ai в ChatService: get_chat_service(db=Depends(get_db), ai=Depends(get_ai))
+Какой провайдер поднимется — решает AI_PROVIDER в .env, а не код роутов.
 """
+
+from functools import lru_cache
 
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
+from app.ai.base import AIProvider, AIProviderDev, AIProviderError
+from app.ai.openrouter import OpenRouterProvider
+from app.config import settings
 from app.db import get_db
 from app.service import ChatService
-from app.ai.base import AIProvider, AIProviderDev, AIProviderProd
 
+
+@lru_cache
 def get_ai() -> AIProvider:
-    return AIProviderDev()
+    """Провайдер живёт один на всё приложение — пересоздавать его на запрос незачем."""
+    name = settings.ai_provider.lower()
 
-def get_chat_service(db: Session = Depends(get_db), ai_provider=Depends(get_ai)) -> ChatService:
+    if name == "openrouter":
+        return OpenRouterProvider()
+    if name == "dev":
+        return AIProviderDev()
+
+    raise AIProviderError(f"Неизвестный AI_PROVIDER={settings.ai_provider!r}: ожидается 'dev' или 'openrouter'")
+
+
+def get_chat_service(db: Session = Depends(get_db), ai_provider: AIProvider = Depends(get_ai)) -> ChatService:
 
     return ChatService(db, ai_provider)

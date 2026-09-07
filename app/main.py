@@ -11,8 +11,10 @@ TODO:
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
 
+from app.ai.base import AIProviderError
 from app.api.conversations import router as conversations_router
 from app.db import init_db
 
@@ -27,6 +29,12 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="ChatLab", lifespan=lifespan)
 
 app.include_router(conversations_router)
+
+
+@app.exception_handler(AIProviderError)
+async def ai_provider_error_handler(request: Request, exc: AIProviderError):
+    """Ловит ошибки конфига: get_ai() падает ещё до входа в тело роута."""
+    return JSONResponse(status_code=status.HTTP_502_BAD_GATEWAY, content={"detail": str(exc)})
 
 
 @app.get("/healthz")

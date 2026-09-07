@@ -12,6 +12,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.ai.base import AIProviderError
 from app.deps import get_chat_service
 from app.schemas import (
     ConversationCreate,
@@ -90,3 +91,6 @@ async def create_message(
         return await service.send_message(conv_id, payload.content)
     except ConversationNotFound as exc:
         raise _not_found(exc) from exc
+    except AIProviderError as exc:
+        # Сообщение пользователя уже сохранено — падаем только на ответе модели.
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
