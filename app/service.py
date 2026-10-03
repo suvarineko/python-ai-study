@@ -7,11 +7,14 @@ TODO:
     - async send_message(id, content):  сохранить user -> позвать ai.complete(history) -> сохранить assistant
 """
 
+from collections.abc import AsyncIterator
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Conversation, Message
 from app.ai.base import AIProvider
+from app.config import settings
 
 class ConversationNotFound(Exception):
     """Диалог с указанным id не найден."""
@@ -37,6 +40,7 @@ class ChatService:
         self.db.add(conversation)
         self.db.commit()
         self.db.refresh(conversation)
+        self.add_message(conversation.id, role="system", content=settings.openrouter_system_prompt)
         return conversation
 
     def list_conversations(self) -> list[Conversation]:
@@ -94,3 +98,16 @@ class ChatService:
         reply = await self.ai.complete(history)
 
         return self.add_message(conversation_id, "assistant", reply)
+
+    async def stream_message(self, conversation_id: int, content: str) -> AsyncIterator[str]:
+        """Сохраняет сообщение пользователя, спрашивает ИИ и сохраняет ответ.
+        Возвращает стрим.
+        """
+        self.add_message(conversation_id, "user", content)
+        history = self.list_messages(conversation_id)
+        parts = []
+        async for chank in self.ai.stream(history):
+          parts.append(chank)
+          yield chank
+
+        self.add_message(conversation_id, "assistant", content="".join(parts))

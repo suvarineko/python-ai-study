@@ -94,3 +94,23 @@ async def create_message(
     except AIProviderError as exc:
         # Сообщение пользователя уже сохранено — падаем только на ответе модели.
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+
+@router.post(
+    "/{conv_id}/messages/stream",
+    response_model=MessageOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def stream(
+    conv_id: int,
+    payload: MessageCreate,
+    service: ChatService = Depends(get_chat_service),
+):
+
+    try:
+        async for chank in service.stream_message(conv_id, payload.content):
+            print(chank)
+    except ConversationNotFound as exc:
+        raise _not_found(exc) from exc
+    except AIProviderError as exc:
+        # Сообщение пользователя уже сохранено — падаем только на ответе модели.
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc

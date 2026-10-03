@@ -26,6 +26,7 @@ class OpenRouterProvider(AIProvider):
         payload = {
             "model": settings.openrouter_model,
             "messages": [{"role": m.role, "content": m.content} for m in messages],
+            "system": settings.openrouter_system_prompt,
         }
 
         try:

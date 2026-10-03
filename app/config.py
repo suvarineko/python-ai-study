@@ -19,5 +19,6 @@ class Settings(BaseSettings):
   openrouter_model: str = "qwen/qwen3.7-flash"
   openrouter_base_url: str = "https://openrouter.ai/api/v1"
   openrouter_timeout: float = 60.0
+  openrouter_system_prompt: str = ""
 
 settings = Settings()
