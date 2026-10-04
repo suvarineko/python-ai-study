@@ -21,4 +21,9 @@ class Settings(BaseSettings):
   openrouter_timeout: float = 60.0
   openrouter_system_prompt: str = ""
 
+  # --- Телеграм-бот (app/bot.py) ---
+  telegram_bot_token: str = ""
+  # Адрес нашего же API, к которому бот ходит как обычный клиент.
+  api_base_url: str = "http://127.0.0.1:8906"
+
 settings = Settings()

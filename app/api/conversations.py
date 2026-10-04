@@ -11,6 +11,7 @@
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 
 from app.ai.base import AIProviderError
 from app.deps import get_chat_service
@@ -95,22 +96,30 @@ async def create_message(
         # Сообщение пользователя уже сохранено — падаем только на ответе модели.
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
 
-@router.post(
-    "/{conv_id}/messages/stream",
-    response_model=MessageOut,
-    status_code=status.HTTP_201_CREATED,
-)
-async def stream(
+@router.post("/{conv_id}/messages/stream")
+async def stream_message(
     conv_id: int,
     payload: MessageCreate,
     service: ChatService = Depends(get_chat_service),
 ):
+    """Отдаёт ответ модели по мере генерации: кадры `data: ...`, в конце `[DONE]`.
 
+    response_model и 201 здесь не нужны — тело не JSON-объект, а поток.
+    """
+    # Существование диалога проверяем ДО StreamingResponse. Как только поток
+    # начался, статус 200 и заголовки уже у клиента — отдать 404 поздно.
     try:
-        async for chank in service.stream_message(conv_id, payload.content):
-            print(chank)
+        service.get_conversation(conv_id)
     except ConversationNotFound as exc:
         raise _not_found(exc) from exc
-    except AIProviderError as exc:
-        # Сообщение пользователя уже сохранено — падаем только на ответе модели.
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+
+    async def event_stream():
+        try:
+            async for chunk in service.stream_message(conv_id, payload.content):
+                yield f"data: {chunk}\n\n"
+        except AIProviderError as exc:
+            # Статус уже 200, поэтому про ошибку сообщаем отдельным кадром.
+            yield f"event: error\ndata: {exc}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")

@@ -21,6 +21,7 @@ def fake_settings(monkeypatch):
     monkeypatch.setattr(settings, "openrouter_api_key", "test-key")
     monkeypatch.setattr(settings, "openrouter_model", "test/model")
     monkeypatch.setattr(settings, "openrouter_base_url", "https://openrouter.ai/api/v1")
+    monkeypatch.setattr(settings, "openrouter_system_prompt", "")
 
 
 def call(handler, messages=None) -> str:
@@ -70,3 +71,20 @@ def test_request_carries_model_history_and_auth():
 def test_http_error_becomes_ai_provider_error():
     with pytest.raises(AIProviderError, match="429"):
         call(lambda request: httpx.Response(429, text="Rate limit exceeded"))
+
+
+def test_stream_collects_deltas_and_stops_on_done():
+    sse = (
+        b'data: {"choices":[{"delta":{"content":"\\u041f\\u0440\\u0438"}}]}\n\n'
+        b': OPENROUTER PROCESSING\n\n'            # keepalive, пропускаем
+        b'data: {"choices":[{"delta":{"content":"\\u0432\\u0435\\u0442"}}]}\n\n'
+        b'data: [DONE]\n\n'
+    )
+
+    async def main():
+        transport = httpx.MockTransport(lambda request: httpx.Response(200, content=sse))
+        async with httpx.AsyncClient(transport=transport) as client:
+            provider = OpenRouterProvider(client=client)
+            return [chunk async for chunk in provider.stream([Message(role="user", content="Привет")])]
+
+    assert asyncio.run(main()) == ["При", "вет"]

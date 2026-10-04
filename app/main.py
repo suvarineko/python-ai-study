@@ -5,7 +5,10 @@ TODO:
   - app = FastAPI(title="ChatLab", lifespan=lifespan)
   - app.include_router(conversations_router)   # появится на Шаге 3
   - GET /healthz -> {"ok": True}
-Запуск: python -m uvicorn app.main:app --reload   (из корня ChatLab)
+Запуск: python -m uvicorn app.main:app --reload --port 8906   (из корня ChatLab)
+
+Порт 8906 — он же в uvicorn.run ниже и в API_BASE_URL в .env. Без --port
+uvicorn поднимется на 8000, и телеграм-бот до API не дотянется.
 
 """
 from contextlib import asynccontextmanager

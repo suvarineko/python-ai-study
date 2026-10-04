@@ -26,9 +26,15 @@ class AIProviderDev(AIProvider):
     return "Тест дев"
 
   async def stream(self, messages: list[Message]) -> AsyncIterator[str]:
-    for chank in "Тест дев".split():
-      yield chank
+    # По 4 символа, а не по словам: split() съедает пробелы и склеить куски
+    # обратно в "Тест дев" уже не получится.
+    reply = "Тест дев"
+    for start in range(0, len(reply), 4):
+      yield reply[start:start + 4]
 
 class AIProviderProd(AIProvider):
   async def complete(self, messages: list[Message]) -> str:
     return "Тест прод"
+
+  async def stream(self, messages: list[Message]) -> AsyncIterator[str]:
+    yield "Тест прод"

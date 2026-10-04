@@ -14,7 +14,6 @@ from sqlalchemy.orm import Session
 
 from app.models import Conversation, Message
 from app.ai.base import AIProvider
-from app.config import settings
 
 class ConversationNotFound(Exception):
     """Диалог с указанным id не найден."""
@@ -40,7 +39,6 @@ class ChatService:
         self.db.add(conversation)
         self.db.commit()
         self.db.refresh(conversation)
-        self.add_message(conversation.id, role="system", content=settings.openrouter_system_prompt)
         return conversation
 
     def list_conversations(self) -> list[Conversation]:
