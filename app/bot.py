@@ -3,6 +3,7 @@
 Как запустить:
   1. Напишите @BotFather в Телеграме, команда /newbot — он выдаст токен.
   2. Положите токен в .env:  TELEGRAM_BOT_TOKEN=123456:AA...
+     И, если нужно, список тех, кому отвечать: TELEGRAM_ALLOWED_USERS=123456789
   3. В одном терминале поднимите API:  python -m uvicorn app.main:app --reload --port 8906
   4. В другом запустите бота:          python -m app.bot
 
@@ -21,6 +22,10 @@ from app.config import settings
 
 # Все методы Телеграма — это просто URL вида .../bot<ТОКЕН>/<имяМетода>
 TELEGRAM_API = f"https://api.telegram.org/bot{settings.telegram_bot_token}"
+
+# Кому бот отвечает. Пустой набор означает «всем» — см. предупреждение в main().
+# replace(",", " ") чтобы одинаково понимать "1,2", "1, 2" и "1 2".
+ALLOWED_USERS = {int(part) for part in settings.telegram_allowed_users.replace(",", " ").split()}
 
 # Какому диалогу в нашей БД соответствует чат в Телеграме: {chat_id: conversation_id}.
 # Словарь живёт в памяти процесса — после перезапуска бота диалоги начнутся заново.
@@ -93,6 +98,14 @@ def handle_message(message: dict) -> None:
     """Обработать одно сообщение из Телеграма."""
     chat_id = message["chat"]["id"]
     text = message.get("text", "")
+    # Берём id автора, а не чата: в группе это разные вещи.
+    user_id = message.get("from", {}).get("id")
+
+    if ALLOWED_USERS and user_id not in ALLOWED_USERS:
+        # id печатаем в консоль — так вы узнаете свой и впишете его в .env.
+        print(f"Отказано: пользователь {user_id} не в TELEGRAM_ALLOWED_USERS")
+        send_message(chat_id, "Извините, у вас нет доступа к этому боту.")
+        return
 
     if text == "/start":
         chats.pop(chat_id, None)  # забыть старый диалог, следующий вопрос начнёт новый
@@ -109,6 +122,11 @@ def handle_message(message: dict) -> None:
 def main() -> None:
     if not settings.telegram_bot_token:
         raise SystemExit("Не задан TELEGRAM_BOT_TOKEN в .env — токен выдаёт @BotFather")
+
+    if ALLOWED_USERS:
+        print(f"Доступ разрешён только: {sorted(ALLOWED_USERS)}")
+    else:
+        print("ВНИМАНИЕ: TELEGRAM_ALLOWED_USERS пуст — бот отвечает всем, кто его найдёт.")
 
     print(f"Бот запущен, API: {settings.api_base_url}. Ctrl+C — остановить.")
 

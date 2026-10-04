@@ -23,6 +23,8 @@ class Settings(BaseSettings):
 
   # --- Телеграм-бот (app/bot.py) ---
   telegram_bot_token: str = ""
+  # Кому бот отвечает: id через запятую. Пусто — отвечает всем.
+  telegram_allowed_users: str = ""
   # Адрес нашего же API, к которому бот ходит как обычный клиент.
   api_base_url: str = "http://127.0.0.1:8906"
 
